@@ -188,7 +188,7 @@ const Crud = () => {
             value={searchId}
             onChange={(e) => setSearchId(e.target.value)}
           />
-          <button onClick={searchStudentById}>Tìm sinh viên qua API</button>
+          <button onClick={searchStudentById}>Tìm sinh viên qua ID</button>
         </div>
       </div>
 
@@ -210,7 +210,7 @@ const Crud = () => {
                 <h3>Lớp học: {data.classRoom}</h3>
               </div>
               <div>
-                <h3>API ID: {data.id}</h3>
+                <h3> ID: {data.id}</h3>
               </div>
               <div>
                 <button onClick={() => passData(data.id)}>Edit</button>

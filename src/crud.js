@@ -93,6 +93,10 @@ const Crud = () => {
       });
       alert("Cập nhật thông tin sinh viên thành công");
       fetch(); // Cập nhật danh sách sau khi cập nhật
+      setName(""); // Reset lại thông tin
+      setPhone(""); // Reset lại thông tin
+      setSubject(""); // Reset lại thông tin
+      setClassRoom(""); // Reset lại thông tin
       setId(""); // Reset lại ID
     } catch (error) {
       alert("Lỗi khi cập nhật thông tin sinh viên: ", error);

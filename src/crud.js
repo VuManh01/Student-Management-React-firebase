@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { db } from "./firebase";
-import "./crud.css";
 import {
   doc,
   addDoc,
@@ -10,41 +9,45 @@ import {
   getDocs,
   getDoc,
 } from "firebase/firestore";
+import "./crud.css";
 
 const Crud = () => {
   const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [subject, setSubject] = useState(""); // Môn học
-  const [classRoom, setClassRoom] = useState(""); // Lớp học
+  const [age, setAge] = useState("");
+  const [gender, setGender] = useState("");
+  const [major, setMajor] = useState("");
   const [fetchData, setFetchData] = useState([]);
   const [id, setId] = useState("");
-  const [searchId, setSearchId] = useState(""); // Lưu ID tìm kiếm
+  const [searchTerm, setSearchTerm] = useState(""); // Thêm state cho tìm kiếm
 
-  // Tạo tham chiếu đến bộ sưu tập "students" trong Firebase
   const dbref = collection(db, "students");
 
-  // Thêm sinh viên mới vào Firebase
   const add = async () => {
+    if (
+      !name ||
+      !major ||
+      age <= 0 ||
+      (gender !== "Male" && gender !== "Female")
+    ) {
+      alert("Vui lòng nhập đầy đủ và chính xác thông tin");
+      return;
+    }
+
     try {
       await addDoc(dbref, {
         name: name,
-        phone: phone,
-        subject: subject, // Thêm môn học
-        classRoom: classRoom, // Thêm lớp học
+        age: parseInt(age),
+        gender: gender,
+        major: major,
       });
       alert("Thêm sinh viên thành công");
-      // Reset form
-      setName("");
-      setPhone("");
-      setSubject("");
-      setClassRoom("");
-      fetch(); // Cập nhật danh sách sau khi thêm
+      resetForm();
+      fetch();
     } catch (error) {
       alert("Lỗi khi thêm sinh viên: ", error);
     }
   };
 
-  // Lấy danh sách sinh viên từ Firebase
   const fetch = async () => {
     try {
       const snapshot = await getDocs(dbref);
@@ -62,17 +65,16 @@ const Crud = () => {
     fetch();
   }, []);
 
-  // Lấy thông tin chi tiết của một sinh viên theo ID
   const passData = async (id) => {
     try {
       const docRef = doc(db, "students", id);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         setName(docSnap.data().name);
-        setPhone(docSnap.data().phone);
-        setSubject(docSnap.data().subject); // Gán môn học
-        setClassRoom(docSnap.data().classRoom); // Gán lớp học
-        setId(id); // Lưu lại ID để cập nhật
+        setAge(docSnap.data().age);
+        setGender(docSnap.data().gender);
+        setMajor(docSnap.data().major);
+        setId(id);
       } else {
         alert("Không tìm thấy sinh viên này");
       }
@@ -81,65 +83,59 @@ const Crud = () => {
     }
   };
 
-  // Cập nhật thông tin sinh viên theo ID
   const update = async () => {
+    if (
+      !name ||
+      !major ||
+      age <= 0 ||
+      (gender !== "Male" && gender !== "Female")
+    ) {
+      alert("Vui lòng nhập đầy đủ và chính xác thông tin");
+      return;
+    }
+
     try {
       const docRef = doc(db, "students", id);
       await updateDoc(docRef, {
         name: name,
-        phone: phone,
-        subject: subject, // Cập nhật môn học
-        classRoom: classRoom, // Cập nhật lớp học
+        age: parseInt(age),
+        gender: gender,
+        major: major,
       });
       alert("Cập nhật thông tin sinh viên thành công");
-      fetch(); // Cập nhật danh sách sau khi cập nhật
-      setName(""); // Reset lại thông tin
-      setPhone(""); // Reset lại thông tin
-      setSubject(""); // Reset lại thông tin
-      setClassRoom(""); // Reset lại thông tin
-      setId(""); // Reset lại ID
+      fetch();
+      resetForm();
     } catch (error) {
       alert("Lỗi khi cập nhật thông tin sinh viên: ", error);
     }
   };
 
-  // Xóa sinh viên theo ID
   const del = async (id) => {
     try {
       const docRef = doc(db, "students", id);
       await deleteDoc(docRef);
       alert("Xóa sinh viên thành công");
-      fetch(); // Cập nhật danh sách sau khi xóa
+      fetch();
     } catch (error) {
       alert("Lỗi khi xóa sinh viên: ", error);
     }
   };
 
-  // Tìm sinh viên theo ID từ API
-  const searchStudentById = async () => {
-    try {
-      const docRef = doc(db, "students", searchId);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        alert(`Thông tin sinh viên: 
-          Họ và tên: ${docSnap.data().name}
-          Số điện thoại: ${docSnap.data().phone}
-          Môn học: ${docSnap.data().subject}
-          Lớp học: ${docSnap.data().classRoom}`);
-      } else {
-        alert("Không tìm thấy sinh viên này");
-      }
-      // Reset trường nhập ID
-      setSearchId("");
-    } catch (error) {
-      alert("Lỗi khi tìm kiếm sinh viên: ", error);
-      // Reset trường nhập ID nếu xảy ra lỗi
-      setSearchId("");
-    }
+  const resetForm = () => {
+    setName("");
+    setAge("");
+    setGender("");
+    setMajor("");
+    setId("");
   };
 
+  // Lọc dữ liệu theo từ khóa tìm kiếm
+  const filteredData = fetchData.filter((data) =>
+    data.id.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
-    <div>
+    <div className="a">
       <div className="form_container">
         <h2>ADD/ UPDATE FORM</h2>
         <div className="form_row">
@@ -153,30 +149,25 @@ const Crud = () => {
           </div>
           <div className="box">
             <input
-              type="text"
-              placeholder="Phone Number"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              pattern="\d{0,10}" /* Chỉ cho phép tối đa 10 chữ số */
-              title="Số điện thoại tối đa 10 chữ số"
-              maxLength="10" /* Giới hạn độ dài tối đa của trường nhập */
+              type="number"
+              placeholder="Age"
+              value={age}
+              onChange={(e) => setAge(e.target.value)}
             />
           </div>
-
           <div className="box">
-            <input
-              type="text"
-              placeholder="Class"
-              value={classRoom}
-              onChange={(e) => setClassRoom(e.target.value)}
-            />
+            <select value={gender} onChange={(e) => setGender(e.target.value)}>
+              <option value="">Select Gender</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
           </div>
           <div className="box">
             <input
               type="text"
-              placeholder="subject"
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
+              placeholder="Major"
+              value={major}
+              onChange={(e) => setMajor(e.target.value)}
             />
           </div>
           <button onClick={add}>Thêm sinh viên</button>
@@ -184,42 +175,35 @@ const Crud = () => {
             Cập nhật sinh viên
           </button>
         </div>
+      </div>
 
-        <div className="search_section">
-          <input
-            type="text"
-            placeholder="Nhập ID sinh viên"
-            value={searchId}
-            onChange={(e) => setSearchId(e.target.value)}
-          />
-          <button onClick={searchStudentById}>Tìm sinh viên qua ID</button>
-        </div>
+      <div className="search_container">
+        <h2>Tìm kiếm sinh viên</h2>
+        <input
+          type="text"
+          placeholder="Tìm sinh viên theo id"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
       </div>
 
       <div className="database">
         <h2>Danh sách sinh viên</h2>
         <div className="container">
-          {fetchData.map((data) => (
+          {filteredData.map((data) => (
             <div key={data.id} className="box">
-              <div>
-                <h3>Họ và tên: {data.name}</h3>
-              </div>
-              <div>
-                <h3>Số điện thoại: {data.phone}</h3>
-              </div>
-              <div>
-                <h3>Môn học: {data.subject}</h3>
-              </div>
-              <div>
-                <h3>Lớp học: {data.classRoom}</h3>
-              </div>
-              <div>
-                <h3> ID: {data.id}</h3>
-              </div>
-              <div>
-                <button onClick={() => passData(data.id)}>Edit</button>
-                <button onClick={() => del(data.id)}>Delete</button>
-              </div>
+              <h3>Họ và tên: {data.name}</h3>
+              <h3>Tuổi: {data.age}</h3>
+              <h3>Giới tính: {data.gender}</h3>
+              <h3>Ngành học: {data.major}</h3>
+              <h3>ID: {data.id}</h3>
+              <button
+                style={{ marginBottom: "10" }}
+                onClick={() => passData(data.id)}
+              >
+                Edit
+              </button>
+              <button onClick={() => del(data.id)}>Delete</button>
             </div>
           ))}
         </div>
